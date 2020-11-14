@@ -63,7 +63,7 @@ def _get_operator_info(dag_id, op, memo,id):
     }
 
     if info["task_id"] in memo.keys():
-        return None, -1
+        return None, memo[info["task_id"]]["id"]
 
     memo[info["task_id"]] = info
 
@@ -73,6 +73,7 @@ def _get_operator_info(dag_id, op, memo,id):
     for op_down in op.downstream_list:
         down_streams, nn = _get_operator_info(dag_id, op_down, memo, n)
         if down_streams is None:
+            info["nexts"].append(nn)
             continue
         n = nn
         nodes += down_streams
@@ -121,7 +122,7 @@ def _create_vis_dataset(operators_info):
         })
 
         if op["type"] == "TriggerDagRunOperator":
-            edges.append({"from": op["id"], "to": dag_dict[op["next_dag_id"]][0]["id"], "arrows": "to"})
+            edges.append({"from": op["id"], "to": dag_dict[op["next_dag_id"]][0]["id"], "arrows": "to", "dashes": "true"})
 
     return nodes, edges
 
