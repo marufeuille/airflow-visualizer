@@ -7,6 +7,8 @@ from importlib import import_module
 from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_file_location
 
+from airflow import DAG
+
 def _get_pyfile_list(PATH, prefix=""):
     '''指定されたディレクトリ内を再帰的に調べ、その中にあるpythonファイルの一覧を作る
     :param str PATH: 検索したいパス
@@ -80,23 +82,24 @@ def _get_operator_info(dag_id, op, memo,id):
 
 def _get_dag_info(filename, id=1):
     '''指定されたPythonファイルにDagの定義があるかを調べ、あれば解析を行う
-    ただし、いまのところdagという名前の変数があることだけで確認しているため、今後変更が必要。
+    仕組み上、globalにあるDAGオブジェクトしか解析できない。
     :param str filename: 解析対象のファイル名
     :param int id: オペレータにつけるID（通し番号）
     :return: dag_id, dagから抽出したオペレータ情報の連結リスト, 最後のID
     :rtype: tuple(str, list, int)
     '''
     dags_info = []
-    try:
-        py_module = import_module(filename.replace("/", ".")[:-3])
-        dag = py_module.dag
+    py_module = import_module(filename.replace("/", ".")[:-3])
+
+    for item in py_module.__dict__.items():
+        if not isinstance(item[1], DAG):
+            continue
+        dag = item[1]
         for op in dag.roots:
             nodes, id = _get_operator_info(dag.dag_id, op, {}, id)
             dags_info += nodes
         return dag.dag_id, dags_info, id
-    except AttributeError:
-        dags_info = None
-        pass
+
     return "", dags_info, id
 
 def _create_vis_dataset(operators_info):
