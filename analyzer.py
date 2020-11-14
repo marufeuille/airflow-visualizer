@@ -8,6 +8,12 @@ from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_file_location
 
 def _get_pyfile_list(PATH, prefix=""):
+    '''指定されたディレクトリ内を再帰的に調べ、その中にあるpythonファイルの一覧を作る
+    :param str PATH: 検索したいパス
+    :param str prefix: 起点からたどったディレクトリを/で連結した文字列
+    :return: 指定したディレクトリ内にあったPythonファイルの一覧
+    :rtype: list
+    '''
     lists = os.listdir(PATH)
     pyfiles = list(
         map(
@@ -28,6 +34,14 @@ def _get_pyfile_list(PATH, prefix=""):
 gid_map = {}
 
 def _get_operator_info(dag_id, op, memo,id):
+    '''渡されたオペレータの情報を取り出し、再帰的に検索する
+    :param str dag_id: このオペレータが存在するDAGのID
+    :param Operator op: Airflow Operator
+    :param dict memo: これまでに発見したOperatorの情報
+    :param int id: id
+    :return: このオペレータより後ろにあるオペレータの情報をつないだ連結リスト
+    :rtype: list
+    '''
 
     if dag_id not in gid_map.keys():
         if len(gid_map.keys()) == 0:
@@ -65,6 +79,13 @@ def _get_operator_info(dag_id, op, memo,id):
     return nodes, n
 
 def _get_dag_info(filename, id=1):
+    '''指定されたPythonファイルにDagの定義があるかを調べ、あれば解析を行う
+    ただし、いまのところdagという名前の変数があることだけで確認しているため、今後変更が必要。
+    :param str filename: 解析対象のファイル名
+    :param int id: オペレータにつけるID（通し番号）
+    :return: dag_id, dagから抽出したオペレータ情報の連結リスト, 最後のID
+    :rtype: tuple(str, list, int)
+    '''
     dags_info = []
     try:
         py_module = import_module(filename.replace("/", ".")[:-3])
@@ -78,10 +99,15 @@ def _get_dag_info(filename, id=1):
         pass
     return "", dags_info, id
 
-def _create_vis_dataset(operators):
+def _create_vis_dataset(operators_info):
+    '''オペレータの情報をもとに、visjs向けのdataset(json)を作成する
+    :param list operators_info: _get_dag_infoで生成されるリスト
+    :return: visjsのnode, visjsのedges
+    :rtype: tuple(list, list)
+    '''
     nodes = []
     edges = []
-    for op in operators:
+    for op in operators_info:
         for to in op["nexts"]:
             edges.append({"from": op["id"], "to": to, "arrows": "to"})
         nodes.append({
