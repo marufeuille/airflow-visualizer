@@ -19,7 +19,7 @@
           xhr.open('GET', url, true);
           xhr.onload = () => {
             if (xhr.readyState === 4 && xhr.status === 200) {
-              resolve(xhr.response);
+              resolve([url, xhr.response]);
             } else {
               reject(new Error(xhr.statusText));
             }
@@ -31,37 +31,39 @@
         });
       }
 
-      http_get("./edges.json").then(res => {
-        let edges = new vis.DataSet(JSON.parse(res));
-        http_get("./nodes.json").then(res => {
-          let nodes = new vis.DataSet(JSON.parse(res));
-
-          var container = document.getElementById('network');
-          var data = {
-            nodes: nodes,
-            edges: edges
-          };
-          var options = {
-            nodes: {
-              shape: "box"
-            },
-            edges: {
-              arrows: 'to',
-              smooth: false
-            },
-            layout: {
-              randomSeed: undefined,
-              improvedLayout:true,
-              hierarchical: {
-                enabled: true,
-                levelSeparation: 200,
-                direction: 'LR',
-                sortMethod: 'directed'
-              }
+      Promise.all([
+        http_get("./edges.json"),
+        http_get("./nodes.json")
+      ]).then(res => {
+        const data = {}
+        for(i = 0; i < res.length; i ++) {
+          item = res[i]
+          url = item[0]
+          text = item[1]
+          key = url == "./edges.json" ? "edges" : "nodes"
+          data[key] = new vis.DataSet(JSON.parse(text))
+        }
+        const container = document.getElementById('network');
+        var options = {
+          nodes: {
+            shape: "box"
+          },
+          edges: {
+            arrows: 'to',
+            smooth: false
+          },
+          layout: {
+            randomSeed: undefined,
+            improvedLayout:true,
+            hierarchical: {
+              enabled: true,
+              levelSeparation: 200,
+              direction: 'LR',
+              sortMethod: 'directed'
             }
-          };
-          var network = new vis.Network(container, data, options);
-        })
+          }
+        };
+        var network = new vis.Network(container, data, options);
       })
     </script>
   </body>
