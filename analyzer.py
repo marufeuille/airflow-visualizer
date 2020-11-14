@@ -7,12 +7,6 @@ from importlib import import_module
 from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_file_location
 
-
-DAG_HOME = "./sample_dag"
-p = pathlib.Path(DAG_HOME)
-ABS_DAG_HOME = str(p.resolve())
-sys.path.append(ABS_DAG_HOME)
-
 def _get_pyfile_list(PATH, prefix=""):
     lists = os.listdir(PATH)
     pyfiles = list(
@@ -103,6 +97,10 @@ def _create_vis_dataset(operators):
     return nodes, edges
 
 if __name__ == "__main__":
+    DAG_HOME = sys.argv[1]
+    p = pathlib.Path(DAG_HOME)
+    ABS_DAG_HOME = str(p.resolve())
+    sys.path.append(ABS_DAG_HOME)
     candidate_dags = _get_pyfile_list(DAG_HOME)
     id = 1
     all_dags = []
