@@ -1,0 +1,73 @@
+<html>
+  <head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet">
+    <style type="text/css">
+      #network {
+        width:  1900px;
+        height: 600px;
+        border: 1px solid #000;
+      }
+    </style>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+  </head>
+  <body>
+    <div id="network"></div>
+    <script type="text/javascript">
+      const http_get = (url) => {
+        return new Promise((resolve, reject) => {
+          let xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.onload = () => {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              resolve(xhr.response);
+            } else {
+              reject(new Error(xhr.statusText));
+            }
+          };
+          xhr.onerror = () => {
+            reject(new Error(xhr.statusText));
+          };
+          xhr.send(null);
+        });
+      }
+
+      http_get("./edges.json").then(res => {
+        let edges = new vis.DataSet(JSON.parse(res));
+        http_get("./nodes.json").then(res => {
+          let nodes = new vis.DataSet(JSON.parse(res));
+
+          var container = document.getElementById('network');
+          var data = {
+            nodes: nodes,
+            edges: edges
+          };
+          var options = {
+            edges: {
+              arrows: 'to', // エッジに矢印を付けて有向グラフにする
+              smooth: false // falseにするとエッジが直線になる
+            },
+          };
+          var network = new vis.Network(container, data, options);
+        })
+      })
+      var nodes = new vis.DataSet([
+        {id: 1, label: 'A'},
+        {id: 2, label: 'B'},
+        {id: 3, label: 'C'},
+        {id: 4, label: 'D'},
+        {id: 5, label: 'E'},
+        {id: 6, label: 'F'},
+        {id: 7, label: 'G'},
+        {id: 8, label: 'H'},
+      ]);
+      var edges = new vis.DataSet([
+        {from: 1, to: 2, arrows: 'to'},
+        {from: 1, to: 3, arrows: 'to'},
+        {from: 3, to: 4, arrows: 'to'},
+        {from: 6, to: 1, arrows: 'to'},
+        {from: 7, to: 8, arrows: 'to'},
+        {from: 8, to: 7, arrows: 'to'},
+      ]);
+    </script>
+  </body>
+</html>
