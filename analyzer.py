@@ -117,6 +117,7 @@ def _create_vis_dataset(operators_info):
         nodes.append({
             "id": op["id"],
             "group": op["group"],
+            "dag_id": op["dag_id"],
             "label": "{}\n{}".format(op["task_id"], op["type"]),
             "mass": 2
         })

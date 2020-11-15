@@ -36,17 +36,23 @@
         http_get("./nodes.json")
       ]).then(res => {
         const data = {}
+        let nodes = null
         for(i = 0; i < res.length; i ++) {
           item = res[i]
           url = item[0]
           text = item[1]
           key = url == "./edges.json" ? "edges" : "nodes"
+          if (key == "nodes") {
+            nodes = JSON.parse(text)
+          }
           data[key] = new vis.DataSet(JSON.parse(text))
         }
         const container = document.getElementById('network');
         const options = {
           nodes: {
-            shape: "box"
+            shape: "box",
+            margin: 10,
+            borderWidth: 0
           },
           edges: {
             arrows: 'to',
@@ -64,6 +70,38 @@
           }
         };
         const network = new vis.Network(container, data, options);
+        network.on("selectNode", (params) => {
+          if (params.nodes.length == 1) {
+            if (network.isCluster(params.nodes[0]) == true) {
+              network.openCluster(params.nodes[0]);
+            }
+          }
+        });
+        const gid_set = new Set()
+        for (let item of nodes) {
+          gid_set.add([item["group"], item["dag_id"]])
+        }
+        (() => {
+          for (let item of gid_set) {
+            gid = item[0]
+            dag_id = item[1]
+            const clusterOptionsByData = {
+              joinCondition: function (childOptions) {
+                return childOptions.group == gid;
+              },
+              clusterNodeProperties: {
+                id: dag_id,
+                label: dag_id,
+                margin: 10,
+                shape: "circle",
+                borderWidth	: 0,
+                allowSingleNodeCluster: true,
+                color: "#ccc"
+              }
+            };
+            network.cluster(clusterOptionsByData);
+          }
+        }) ()
       })
     </script>
   </body>
